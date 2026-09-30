@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Hero Section -->
+    <div class="row align-items-center mb-5 py-4">
+        <div class="col-lg-8 mx-auto text-center">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 mb-3">
+                <i class="bi bi-stars me-1"></i> AI Legal Document Understanding
+            </span>
+            <h1 class="display-4 fw-bold text-dark mb-3">
+                Understand Legal Documents. <span class="text-primary">Simply.</span>
+            </h1>
+            <p class="lead text-secondary mb-4">
+                Upload a legal document and let LegalEase turn complex legal language into clear, understandable information.
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{{ url_for('upload_file') }}" class="btn btn-primary btn-lg px-4 rounded-pill shadow-sm">
+                    <i class="bi bi-upload me-2"></i> Upload Document
+                </a>
+                <a href="#features" class="btn btn-outline-secondary btn-lg px-4 rounded-pill">
+                    Learn More
+                </a>
+            </div>
+            <div class="mt-4 text-muted small">
+                <i class="bi bi-filetype-pdf me-1"></i> PDF
+                <span class="mx-2">•</span>
+                <i class="bi bi-filetype-docx me-1"></i> DOCX
+                <span class="mx-2">•</span>
+                <i class="bi bi-filetype-txt me-1"></i> TXT
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-3 text-center">
+                <div class="card-body">
+                    <div class="display-6 text-primary mb-3">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h5 class="fw-bold">Document Analysis</h5>
+                    <p class="text-secondary small">Upload and analyze legal documents with automated text extraction and normalization.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-3 text-center">
+                <div class="card-body">
+                    <div class="display-6 text-success mb-3">
+                        <i class="bi bi-chat-heart"></i>
+                    </div>
+                    <h5 class="fw-bold">Simple Summaries</h5>
+                    <p class="text-secondary small">Convert complicated legal language into easy-to-understand explanations and digests.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-3 text-center">
+                <div class="card-body">
+                    <div class="display-6 text-warning mb-3">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h5 class="fw-bold">Key Information</h5>
+                    <p class="text-secondary small">Find important dates, clauses, obligations, monetary fees, and deadlines at a glance.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-3 text-center">
+                <div class="card-body">
+                    <div class="display-6 text-info mb-3">
+                        <i class="bi bi-question-circle"></i>
+                    </div>
+                    <h5 class="fw-bold">Ask Questions</h5>
+                    <p class="text-secondary small">Ask questions about the uploaded document and receive answers strictly grounded in its text.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Documents -->
+    {% if documents %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-folder2-open me-2 text-primary"></i> Uploaded Documents</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Filename</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in documents %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ d['filename'] }}</div>
+                                </td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">{{ d['filetype'] }}</span></td>
+                                <td class="text-muted small">{{ d['created_at'][:10] }}</td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('dashboard', doc_id=d['id']) }}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                        Open Dashboard
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Top Metadata Header -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h3 class="fw-bold mb-0">{{ doc['filename'] }}</h3>
+                    {% if analysis and analysis.get('document_type') %}
+                    <span class="badge bg-primary-subtle text-primary">{{ analysis.get('document_type') }}</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted small">
+                    Uploaded: {{ doc['created_at'][:10] }} · {{ doc['extracted_text'].split()|length }} words · Format: {{ doc['filetype'] }}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('export_report', doc_id=doc['id']) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="bi bi-download me-1"></i> Export Report
+                </a>
+                <a href="{{ url_for('view_document_text', doc_id=doc['id']) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="bi bi-file-text me-1"></i> View Text
+                </a>
+                <form action="{{ url_for('delete_doc', doc_id=doc['id']) }}" method="POST" onsubmit="return confirm('Delete this document?');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-pills mb-4 gap-2" id="docTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active rounded-pill px-4" id="summary-tab" data-bs-toggle="pill" data-bs-target="#summary-pane">
+                <i class="bi bi-card-text me-1"></i> Summary
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill px-4" id="keyinfo-tab" data-bs-toggle="pill" data-bs-target="#keyinfo-pane">
+                <i class="bi bi-info-circle me-1"></i> Key Information
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill px-4" id="clauses-tab" data-bs-toggle="pill" data-bs-target="#clauses-pane">
+                <i class="bi bi-translate me-1"></i> Explain Clauses
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill px-4" id="reviews-tab" data-bs-toggle="pill" data-bs-target="#reviews-pane">
+                <i class="bi bi-shield-alert me-1"></i> Points to Review
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link rounded-pill px-4" id="chat-tab" data-bs-toggle="pill" data-bs-target="#chat-pane">
+                <i class="bi bi-chat-dots me-1"></i> Ask LegalEase
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Contents -->
+    <div class="tab-content" id="docTabContent">
+        <!-- 1. SUMMARY -->
+        <div class="tab-pane fade show active" id="summary-pane">
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-compass text-primary me-2"></i> Document Purpose</h5>
+                <p class="lead fs-6 text-dark bg-light p-3 rounded-3">
+                    {{ analysis.get('document_purpose', 'Document establishing terms and conditions.') if analysis else 'Analysis pending.' }}
+                </p>
+
+                <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-file-earmark-check text-success me-2"></i> Executive Summary</h5>
+                <p class="text-secondary leading-relaxed">
+                    {{ analysis.get('short_summary', 'No summary available.') if analysis else 'Analysis not generated yet.' }}
+                </p>
+
+                {% if analysis and analysis.get('detailed_summary') %}
+                <h6 class="fw-bold text-muted text-uppercase small mt-4 mb-2">Key Provisions Breakdown</h6>
+                <ul class="list-group list-group-flush">
+                    {% for bullet in analysis.get('detailed_summary', []) %}
+                    <li class="list-group-item bg-transparent px-0 text-secondary">
+                        <i class="bi bi-check2 text-primary me-2"></i> {{ bullet }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. KEY INFORMATION -->
+        <div class="tab-pane fade" id="keyinfo-pane">
+            {% if analysis and analysis.get('key_information') %}
+            {% set k = analysis.get('key_information') %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                        <h6 class="fw-bold text-primary"><i class="bi bi-people me-2"></i> Parties Involved</h6>
+                        <p class="text-secondary mb-0">{{ k.get('parties', 'Not found in the document.') }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                        <h6 class="fw-bold text-primary"><i class="bi bi-calendar-event me-2"></i> Important Dates</h6>
+                        <p class="text-secondary mb-1"><strong>Effective:</strong> {{ k.get('effective_date', 'Not found in the document.') }}</p>
+                        <p class="text-secondary mb-0"><strong>Expiration:</strong> {{ k.get('expiration_date', 'Not found in the document.') }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                        <h6 class="fw-bold text-primary"><i class="bi bi-currency-dollar me-2"></i> Monetary Values & Fees</h6>
+                        <p class="text-secondary mb-0">{{ k.get('monetary_amounts', 'Not found in the document.') }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                        <h6 class="fw-bold text-primary"><i class="bi bi-hourglass-split me-2"></i> Deadlines</h6>
+                        <p class="text-secondary mb-0">{{ k.get('deadlines', 'Not found in the document.') }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                        <h6 class="fw-bold text-primary"><i class="bi bi-x-circle me-2"></i> Termination Conditions</h6>
+                        <p class="text-secondary mb-0">{{ k.get('termination_conditions', 'Not found in the document.') }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                        <h6 class="fw-bold text-primary"><i class="bi bi-geo-alt me-2"></i> Governing Law</h6>
+                        <p class="text-secondary mb-0">{{ k.get('governing_law', 'Not found in the document.') }}</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-light border">Key information not extracted.</div>
+            {% endif %}
+        </div>
+
+        <!-- 3. EXPLAIN CLAUSES -->
+        <div class="tab-pane fade" id="clauses-pane">
+            {% if analysis and analysis.get('important_clauses') %}
+                <div class="row g-4">
+                    {% for clause in analysis.get('important_clauses', []) %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 p-4">
+                            <h5 class="fw-bold text-dark">{{ clause.get('clause_title') }}</h5>
+                            <div class="p-3 bg-light rounded-3 font-monospace small text-muted mb-3 border">
+                                "{{ clause.get('original_clause') }}"
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="text-primary fw-bold mb-1">Simple Explanation</h6>
+                                <p class="text-secondary mb-0">{{ clause.get('simple_explanation') }}</p>
+                            </div>
+                            <div class="row g-3 small">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded-3">
+                                        <strong class="text-dark">Why It Matters:</strong>
+                                        <p class="text-secondary mb-0 mt-1">{{ clause.get('why_it_matters') }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-warning-subtle rounded-3 border border-warning-subtle">
+                                        <strong class="text-warning-emphasis">Things to Check with a Lawyer:</strong>
+                                        <p class="text-secondary mb-0 mt-1">{{ clause.get('things_to_check') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-light border">No clauses extracted.</div>
+            {% endif %}
+        </div>
+
+        <!-- 4. POINTS TO REVIEW -->
+        <div class="tab-pane fade" id="reviews-pane">
+            <div class="alert alert-warning border-warning-subtle d-flex align-items-center mb-4">
+                <i class="bi bi-shield-exclamation fs-4 me-3 text-warning"></i>
+                <div class="small">
+                    <strong>Important Points to Review:</strong> LegalEase highlights clauses requiring closer consideration. These are neutral observations, not accusations of illegality. Always verify with qualified counsel.
+                </div>
+            </div>
+
+            {% if analysis and analysis.get('review_points') %}
+                <div class="row g-3">
+                    {% for item in analysis.get('review_points', []) %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="fw-bold mb-0">{{ item.get('title') }}</h5>
+                                <span class="badge bg-warning text-dark">{{ item.get('concern_level') }}</span>
+                            </div>
+                            <div class="text-secondary mb-2">{{ item.get('observation') }}</div>
+                            {% if item.get('clause_snippet') %}
+                            <div class="p-2 bg-light rounded text-muted font-monospace small mb-2 border">
+                                "{{ item.get('clause_snippet') }}"
+                            </div>
+                            {% endif %}
+                            <div class="small text-primary">
+                                <strong>Recommended Verification:</strong> {{ item.get('recommended_verification') }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-light border">No review points detected.</div>
+            {% endif %}
+        </div>
+
+        <!-- 5. ASK LEGALEASE CHAT -->
+        <div class="tab-pane fade" id="chat-pane">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-chat-quote text-primary me-2"></i> Ask Questions About This Document</h5>
+                <p class="text-secondary small mb-4">
+                    LegalEase answers based strictly on the uploaded text. If an answer cannot be determined from the document, it will tell you.
+                </p>
+
+                <!-- Chat history -->
+                <div id="chatHistory" class="p-3 bg-light rounded-4 mb-3 overflow-y-auto" style="max-height: 400px; min-height: 200px;">
+                    {% if conversations %}
+                        {% for c in conversations %}
+                        <div class="text-end mb-3">
+                            <div class="d-inline-block bg-primary text-white p-3 rounded-4 text-start small" style="max-width: 75%;">
+                                {{ c['question'] }}
+                            </div>
+                        </div>
+                        <div class="text-start mb-3">
+                            <div class="d-inline-block bg-white border p-3 rounded-4 small text-secondary shadow-xs" style="max-width: 85%;">
+                                <div class="fw-bold text-dark mb-1">LegalEase:</div>
+                                {{ c['answer'] }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-5" id="emptyChatNotice">
+                            <i class="bi bi-chat-square-text display-6 d-block mb-2"></i>
+                            No questions asked yet. Try asking "What are my obligations?" or "How can this agreement be terminated?"
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Input form -->
+                <form id="chatForm" class="d-flex gap-2">
+                    <input type="text" id="questionInput" class="form-control rounded-pill px-4" placeholder="Ask a question about this document..." required>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4" id="chatSubmitBtn">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const chatForm = document.getElementById('chatForm');
+    const questionInput = document.getElementById('questionInput');
+    const chatHistory = document.getElementById('chatHistory');
+    const chatSubmitBtn = document.getElementById('chatSubmitBtn');
+    const emptyChatNotice = document.getElementById('emptyChatNotice');
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const question = questionInput.value.trim();
+        if (!question) return;
+
+        if (emptyChatNotice) emptyChatNotice.remove();
+
+        // Append user bubble
+        chatHistory.innerHTML += `
+            <div class="text-end mb-3">
+                <div class="d-inline-block bg-primary text-white p-3 rounded-4 text-start small" style="max-width: 75%;">
+                    ${question}
+                </div>
+            </div>
+            <div class="text-start mb-3" id="loadingBubble">
+                <div class="d-inline-block bg-white border p-3 rounded-4 small text-muted">
+                    <span class="spinner-border spinner-border-sm me-2 text-primary"></span> Searching document...
+                </div>
+            </div>
+        `;
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        questionInput.value = '';
+        chatSubmitBtn.disabled = true;
+
+        try {
+            const res = await fetch("{{ url_for('chat', doc_id=doc['id']) }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+            const data = await res.json();
+
+            document.getElementById('loadingBubble').remove();
+
+            chatHistory.innerHTML += `
+                <div class="text-start mb-3">
+                    <div class="d-inline-block bg-white border p-3 rounded-4 small text-secondary shadow-xs" style="max-width: 85%;">
+                        <div class="fw-bold text-dark mb-1">LegalEase:</div>
+                        ${data.answer}
+                        ${data.source_section ? `<div class="mt-2 text-muted fst-italic small">Source: ${data.source_section}</div>` : ''}
+                    </div>
+                </div>
+            `;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        } catch (err) {
+            document.getElementById('loadingBubble').remove();
+            chatHistory.innerHTML += `<div class="alert alert-danger small">Error getting response.</div>`;
+        } finally {
+            chatSubmitBtn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}
